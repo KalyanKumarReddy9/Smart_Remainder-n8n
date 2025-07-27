@@ -1,0 +1,395 @@
+{
+  "name": "project_for_internship",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7,
+              "triggerAtMinute": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6aab1175-cbd3-4e7b-9c17-56d4c4a12cd3",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "kalyankumar.muli64@gmail.com",
+          "mode": "list",
+          "cachedResultName": "kalyankumar.muli64@gmail.com"
+        },
+        "timeMax": "={{ $now.plus(24,'hours') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "03ef8268-e288-41dc-ad97-1895e9ca4d9d",
+      "name": "Get many events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "fA7uKfMTuSdoopKE",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={\n  \"title\": {{$json[\"summary\"]}},\n  \"description\": {{$json[\"description\"]}},\n  \"datetime\": {{$json[\"start\"][\"dateTime\"] || $json[\"start\"][\"date\"]}}\n}\n",
+        "options": {
+          "systemMessage": "You are a smart AI assistant that helps summarize and explain upcoming events from a calendar. The events may include exams, meetings, interviews.\n\nYour goal is to:\n1. Understand the event title and description.\n2. Generate a brief, clear, and useful summary for the user.\n3. Add important info like the event type , key topics, and preparation tips if relevant.\n\nAlways keep your summary professional and friendly. Do not repeat the title. \n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "d77d9f98-9020-4281-a957-1dcdf8c13f6b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyBxBXxm0vJ6b-jpuxDvoWge5Qi4_4xxFAI",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    contents: [\n      {\n        role: \"user\",\n        parts: [\n          {\n            text: \"Create a short summary of this: \" + $json[\"title\"] + \" - \" + $json[\"description\"]\n          }\n        ]\n      }\n    ]\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        976,
+        0
+      ],
+      "id": "98b90f80-6497-4991-9fa8-5ff20edd96dc",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        288,
+        208
+      ],
+      "id": "940ef0c0-38bd-40a6-bbb6-677b326b3652",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bYw6Qmthh3xguBAB",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0b679088-5fae-4eff-9e5a-5fbaa5b1977e",
+              "name": "title",
+              "value": "DeltaX Company Exam",
+              "type": "string"
+            },
+            {
+              "id": "6bbb6b2c-d4f8-4f31-a9f1-623973b67c35",
+              "name": "description",
+              "value": "=Aptitude exam scheduled at 10:30 Am",
+              "type": "string"
+            },
+            {
+              "id": "226e5a3c-93a1-48d5-9ec1-f34728fcdfc4",
+              "name": "message",
+              "value": "==[\n  {\n    \"role\": \"system\",\n    \"content\": \"You are a smart AI assistant that helps summarize and explain upcoming events or tasks from a calendar. The events may include exams, meetings, interviews, classes, tasks, or reminders. Your goal is to generate a short, relevant, and helpful summary for the user.\"\n  },\n  {\n    \"role\": \"user\",\n    \"content\": \"Create a short summary of this: \" + $json[\"title\"] + \" - \" + $json[\"description\"]\n  }\n]\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        0
+      ],
+      "id": "cb987a5b-e38d-43b7-91e4-b3c1413f39d7",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7,
+              "triggerAtMinute": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        32,
+        560
+      ],
+      "id": "06acea04-b040-4871-9711-6d43d955b435",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1mlXlhrz3nvgtzHga-GsWKIxxWJC2RXE-wqmVB7yF-Ok/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1mlXlhrz3nvgtzHga-GsWKIxxWJC2RXE-wqmVB7yF-Ok/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        240,
+        560
+      ],
+      "id": "2e3ef46e-849e-4e00-9b8d-7deff3f7a8e4",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7LRrAuNEUOgJ3DwG",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst today = new Date();\nconst todayStr = today.toISOString().split(\"T\")[0];\n\nconst outputTrue = [];\nconst outputFalse = [];\n\nfor (const item of items) {\n  const rawDate = item.json.Date?.trim(); // Handles newline and space\n\n  if (!rawDate) {\n    outputFalse.push(item.json); // Missing Date goes to false\n  } else {\n    const itemDate = new Date(rawDate);\n    const itemDateStr = itemDate.toISOString().split(\"T\")[0];\n\n    if (itemDateStr === todayStr) {\n      outputTrue.push(item.json);\n    } else {\n      outputFalse.push(item.json);\n    }\n  }\n}\n\nreturn [{ json: { items: outputTrue } }, { json: { items: outputFalse } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        560
+      ],
+      "id": "cb255604-e81d-4759-be2e-fdca45ef8df9",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD\n\nlet todaysExams = [];\n\nfor (const item of items[0].json.items) {\n  if (item.Date === today) {\n    todaysExams.push({\n      json: item\n    });\n  }\n}\n\nreturn todaysExams;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        560
+      ],
+      "id": "e6f5d66e-7060-4609-8fcc-a1efc774679f",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "chatId": "1804994515",
+        "text": "=🎓 *Exam Reminder for Today!*\n\n📅 *Date:* {{$json[\"Date\"]}}  \n⏰ *Time:* {{$json[\"Time\"]}}  \n🏢 *Company:* {{$json[\"Company\"]}}  \n🧠 *Exam Type:* {{$json[\"Exam Type\"]}}  \n📝 *Note:* {{$json[\"Note\"]}}\n\n📣 Good luck! Stay sharp! 💪\n",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        576
+      ],
+      "id": "1a7d7dd0-3339-4fde-8f23-c1bd20551ced",
+      "name": "Send a text message",
+      "webhookId": "69015e53-5b80-49a3-9b8c-f22debd2d83f",
+      "credentials": {
+        "telegramApi": {
+          "id": "0zFZ622K0fZfGhGS",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "1804994515",
+        "text": "={{ $json[\"candidates\"][0][\"content\"][\"parts\"][0][\"text\"] + \"All the best! Be prepared well and give your best. 💪\"}}\n\n\n\n\n",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "e7b4fbda-df27-4276-8505-fdc4ec21bb30",
+      "name": "Send a text message1",
+      "webhookId": "cb7a5d8c-1f23-461e-a000-79e6e97a529a",
+      "credentials": {
+        "telegramApi": {
+          "id": "0zFZ622K0fZfGhGS",
+          "name": "Telegram account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "afe1f681-e94a-4791-a7da-29838072b060",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9d5969e15337c5a552a79fec5d108cb560a485e6290c0ddde15e5ced46575079"
+  },
+  "id": "xr3K48G8SZPu1Wsm",
+  "tags": []
+}
